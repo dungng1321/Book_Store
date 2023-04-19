@@ -1,7 +1,8 @@
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import axiosInstance from "../services/axios-customize";
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
-export interface iUser {
+import { callLoginUser, callRegisterUser } from "../services/API/User/index";
+
+export interface IUser {
   fullName: string;
   email?: string;
   password: string;
@@ -12,23 +13,26 @@ export interface iUser {
 
 interface iAuthState {
   isAuthenticated: boolean;
-  user: iUser | null;
-  status: "success" | "loading" | "failed" | null;
+  user: IUser | null;
+  isLoading: boolean;
   error: string | null;
+  success: string | null;
 }
 
 const initialState: iAuthState = {
   isAuthenticated: false,
   user: null,
-  status: null,
+  isLoading: false,
   error: null,
+  success: null,
 };
+
 // resgister user by backend
 export const registerUser = createAsyncThunk(
   "auth/registerUser",
-  async (user: iUser, thunkAPI) => {
+  async (user: IUser, thunkAPI) => {
     try {
-      const response = await axiosInstance.post("/user/register", user);
+      const response = await callRegisterUser(user);
       return response.data;
     } catch (error: any) {
       return thunkAPI.rejectWithValue(error.response.data);
@@ -39,9 +43,9 @@ export const registerUser = createAsyncThunk(
 // login user and save token to localstorage, refresh token to cookie
 export const loginUser = createAsyncThunk(
   "auth/loginUser",
-  async (user: iUser, thunkAPI) => {
+  async (user: IUser, thunkAPI) => {
     try {
-      const response = await axiosInstance.post("/auth/login", user);
+      const response = await callLoginUser(user);
       localStorage.setItem("access_token", response.data.access_token);
       return response.data;
     } catch (error: any) {
@@ -53,40 +57,52 @@ export const loginUser = createAsyncThunk(
 const authSlice = createSlice({
   name: "auth",
   initialState,
-  reducers: {},
+  reducers: {
+    loginSuccess(state, action) {
+      state.isAuthenticated = true;
+      state.user = action.payload;
+    },
+    resetStatus(state) {
+      state.success = null;
+      state.error = null;
+    },
+  },
   extraReducers: (builder) => {
     builder
 
-        // Register
+      // Register
       .addCase(registerUser.pending, (state) => {
-        state.status = "loading";
+        state.isLoading = true;
       })
       .addCase(registerUser.fulfilled, (state, action) => {
-        state.status = "success";
+        state.isLoading = false;
         state.user = action.payload;
-        
+        state.success = "Register success";
       })
       .addCase(registerUser.rejected, (state, action) => {
-        state.status = "failed";
         state.error = action.error.message as string;
+        state.isLoading = false;
       })
 
       // Login
       .addCase(loginUser.pending, (state) => {
-        state.status = "loading";
+        state.isLoading = true;
       })
       .addCase(loginUser.fulfilled, (state, action) => {
-          state.status = "success";
-          state.user = action.payload;
-          state.isAuthenticated = true;
+        state.user = action.payload;
+        state.isAuthenticated = true;
+        state.success = "Login success";
+        state.isLoading = false;
       })
       .addCase(loginUser.rejected, (state, action) => {
-        state.status = "failed";
         state.error = action.error.message as string;
+        state.isLoading = false;
       });
   },
 });
 
 export const { actions, reducer } = authSlice;
+
+export const { loginSuccess, resetStatus } = actions;
 
 export default reducer;

@@ -6,7 +6,11 @@ const axiosInstance: AxiosInstance
  = axios.create({
     baseURL: baseURL,
     withCredentials: true,
-   
+    
+    headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${localStorage.getItem('access_token')}`
+    }
 });
 
 export default axiosInstance;

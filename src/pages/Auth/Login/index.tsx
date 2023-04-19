@@ -1,18 +1,24 @@
-import { Form, Input, Button } from "antd";
+import { Button, Form, Input } from "antd";
 import { useDispatch, useSelector } from "react-redux";
-import { AppDispatch , RootState} from "../../../store/store";
-import { registerUser, iUser, loginUser } from "../../../store/authSlice";
 import { Link, useNavigate } from "react-router-dom";
+import { IUser, loginUser, resetStatus } from "../../../store/authSlice";
+import { AppDispatch, RootState } from "../../../store/store";
 
 function LoginPage() {
   const dispatch = useDispatch<AppDispatch>();
-  const status = useSelector((state: RootState) => state.auth.status);
   const navigate = useNavigate();
+  const { success, error } = useSelector((state: RootState) => state.auth);
 
-  const handleSubmit = async(values: iUser) => {
-    dispatch(loginUser(values));
-    navigate('/')
+  const handleSubmit = async (values: IUser) => {
+  
+      const result = await dispatch(loginUser(values));
+      result.meta.requestStatus === "fulfilled" && navigate("/", {
+        replace: true,
+      });
+      
   };
+  
+  
 
   return (
     <div className='register-page inset-0 flex justify-center items-center bg-[#FF7F75] h-screen'>
@@ -46,11 +52,15 @@ function LoginPage() {
         >
           <Input.Password />
         </Form.Item>
-        {status === "failed" && (
-          <p className='text-red-500 text-sm flex justify-end my-2'>Email or password is incorrect</p>
+        {error && (
+          <p className='text-red-500 text-sm flex justify-end my-2'>
+            Email or password is incorrect
+          </p>
         )}
-        {status === "success" && (
-          <p className='text-green-500 text-sm flex justify-end my-2'>Login success</p>
+        {success && (
+          <p className='text-green-500 text-sm flex justify-end my-2'>
+            Login success
+          </p>
         )}
 
         <Form.Item wrapperCol={{ span: 24 }} labelCol={{ span: 24 }}>
@@ -59,13 +69,18 @@ function LoginPage() {
             className='
             w-full bg-[#564779] text-white text-[16px]  flex items-center justify-center rounded-lg '
           >
-            Register
+            Login
           </Button>
         </Form.Item>
         <p>
           Are you don't have an account?
-          <Link  className='ml-2 underline' 
-           to='/register'> Resgiter</Link>
+          <Link
+            className='ml-2 underline'
+            to='/register'
+            onClick={() => dispatch(resetStatus())}
+          >
+            Register
+          </Link>
         </p>
       </Form>
     </div>

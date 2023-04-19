@@ -1,24 +1,20 @@
-import  { useEffect } from "react";
+import { useEffect } from "react";
 import { Form, Input, Button } from "antd";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "../../../store/store";
-import { registerUser, iUser } from "../../../store/authSlice";
+import { registerUser, IUser, resetStatus } from "../../../store/authSlice";
 import { useNavigate, Link } from "react-router-dom";
 
 function RegisterPage() {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const status = useSelector((state: RootState) => state.auth.status);
+  const {success, error} = useSelector((state: RootState) => state.auth);
 
-  const handleSubmit = async (values: iUser) => {
+  const handleSubmit = async (values: IUser) => {
     await dispatch(registerUser(values));
   };
 
-  useEffect(() => {
-    if (status === "success") {
-      navigate("/login");
-    }
-  }, [status]);
+  
 
   return (
     <div className='register-page inset-0 flex justify-center items-center bg-[#FF7F75] h-screen'>
@@ -74,12 +70,12 @@ function RegisterPage() {
           <Input.Password />
         </Form.Item>
 
-        {status === "success" && (
+        {success && (
           <p className='text-green-500 mb-2 flex justify-end'>
             Register success
           </p>
         )}
-        {status === "failed" && (
+        {error && (
           <p className='text-red-500 mb-2 flex justify-end'>
             Register failed or user already exists
           </p>
@@ -95,7 +91,7 @@ function RegisterPage() {
         </Form.Item>
         <p>
           Already have an account?{" "}
-          <Link className='ml-2 underline' to='/login'>
+          <Link className='ml-2 underline' to='/login' onClick={() => dispatch(resetStatus())}>
             Login
           </Link>
         </p>
