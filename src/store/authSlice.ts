@@ -1,6 +1,10 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
-import { callLoginUser, callRegisterUser } from "../services/API/User/index";
+import {
+  callLoginUser,
+  callRegisterUser,
+  callFetchUser,
+} from "../services/API/User/index";
 
 export interface IUser {
   fullName: string;
@@ -54,6 +58,14 @@ export const loginUser = createAsyncThunk(
   }
 );
 
+export const fetchUser = createAsyncThunk(
+  "auth/fetchUser",
+  async (_, thunkAPI) => {
+    const response = await callFetchUser();
+    return response.data;
+  }
+);
+
 const authSlice = createSlice({
   name: "auth",
   initialState,
@@ -61,6 +73,11 @@ const authSlice = createSlice({
     loginSuccess(state, action) {
       state.isAuthenticated = true;
       state.user = action.payload;
+    },
+    logoutSuccess(state) {
+      state.isAuthenticated = false;
+      state.user = null;
+      localStorage.removeItem("access_token");
     },
     resetStatus(state) {
       state.success = null;
@@ -97,12 +114,27 @@ const authSlice = createSlice({
       .addCase(loginUser.rejected, (state, action) => {
         state.error = action.error.message as string;
         state.isLoading = false;
+      })
+
+      // Fetch User
+
+      .addCase(fetchUser.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(fetchUser.fulfilled, (state, action) => {
+        state.user = action.payload;
+        state.isAuthenticated = true;
+        state.isLoading = false;
+      })
+      .addCase(fetchUser.rejected, (state, action) => {
+        state.error = action.error.message as string;
+        state.isLoading = false;
       });
   },
 });
 
 export const { actions, reducer } = authSlice;
 
-export const { loginSuccess, resetStatus } = actions;
+export const { loginSuccess, logoutSuccess, resetStatus } = actions;
 
 export default reducer;

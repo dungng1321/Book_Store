@@ -10,7 +10,7 @@ import {
 import Loading from "./common/Loading";
 import DefaultLayout from "./layouts/DefaultLayout";
 import { protectedRoutes, publicRoutes } from "./routes";
-import { loginSuccess } from "./store/authSlice";
+import { fetchUser, loginSuccess } from "./store/authSlice";
 import { AppDispatch, RootState } from "./store/store";
 
 function App() {
@@ -22,6 +22,7 @@ function App() {
   const { isAuthenticated, isLoading } = useSelector(
     (state: RootState) => state.auth
   );
+  const user = useSelector((state: RootState) => state.auth.user);
 
   const currentRoute = [...publicRoutes, ...protectedRoutes].find(
     (route) => route.path === location.pathname
@@ -30,14 +31,32 @@ function App() {
   const token = localStorage.getItem("access_token");
 
   useEffect(() => {
-    token &&
-      (dispatch(loginSuccess(token)), navigate(currentRoute?.path || "*"));
+    if (token) {
+      dispatch(loginSuccess(token));
+      navigate(currentRoute?.path || "/");
+    } else if (
+      protectedRoutes.some((route) => route.path === location.pathname)
+    ) {
+      navigate("/login");
+    }
   }, [token, currentRoute]);
 
+  useEffect(() => {
+    if (isAuthenticated) {
+      dispatch(fetchUser());
+    }
+  }, [dispatch, isAuthenticated]);
+
   // dont redirect to login page when user is authenticated
-  if (isAuthenticated && location.pathname === "/login" || isAuthenticated && location.pathname === "/register") {
+  if (
+    (isAuthenticated && location.pathname === "/login") ||
+    (isAuthenticated && location.pathname === "/register")
+  ) {
     return <Navigate to='/' />;
   }
+
+  // if user is admin, can admin page , else redirect to home page
+  const isAdmin = user && user.role === "ADMIN";
 
   return (
     <>
@@ -77,11 +96,15 @@ function App() {
               path={route.path}
               element={
                 isAuthenticated ? (
-                  <Layout>
-                    <Page />
-                  </Layout>
+                  (isAdmin && route.adminOnly) || !route.adminOnly ? (
+                    <Layout>
+                      <Page />
+                    </Layout>
+                  ) : (
+                    <Navigate to="/" replace={true} />
+                  )
                 ) : (
-                  <Navigate to='/login' />
+                  <Navigate to="/login" replace={true} />
                 )
               }
             />

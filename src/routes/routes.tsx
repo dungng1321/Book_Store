@@ -1,7 +1,8 @@
-import LoginPage from "../pages//Auth/Login";
+import LoginPage from "../pages/Auth/Login";
 import AdminPage from "../pages/Admin";
 import RegisterPage from "../pages/Auth/Register";
 import HomePage from "../pages/Home";
+import AboutPage from '../pages/AboutPage';
 import NotFoundPage from "../pages/NotFound";
 
 import HeaderOnLy from "../layouts/HeaderOnly";
@@ -11,6 +12,7 @@ interface IRoute {
   component: any;
   layout?: any;
   private?: boolean;
+  adminOnly?: boolean;
 }
 
 export const publicRoutes: IRoute[] = [
@@ -39,6 +41,12 @@ export const protectedRoutes: IRoute[] = [
   {
     path: "/admin",
     component: AdminPage,
+    layout: null,
+    adminOnly: true,
+  },
+  {
+    path: "/about",
+    component: AboutPage,
     layout: null,
   },
 ];
